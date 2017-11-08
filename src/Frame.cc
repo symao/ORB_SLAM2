@@ -616,8 +616,8 @@ void Frame::ComputeStereoMatches()
                     disparity=0.01;
                     bestuR = uL-0.01;
                 }
-                mvDepth[iL]=mbf/disparity;
-                mvuRight[iL] = bestuR;
+                mvDepth[iL]=mbf/disparity;    // init depth by fb/disp
+                mvuRight[iL] = bestuR;        // left-right correspondence
                 vDistIdx.push_back(pair<int,int>(bestDist,iL));
             }
         }
