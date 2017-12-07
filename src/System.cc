@@ -100,9 +100,11 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
     mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
 
+#if OPEN_LOOP_CLOSURE
     //Initialize the Loop Closing thread and launch
     mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
     mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
+#endif
 
     //Initialize the Viewer thread and launch
     if(bUseViewer)
@@ -114,13 +116,15 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
-    mpTracker->SetLoopClosing(mpLoopCloser);
-
     mpLocalMapper->SetTracker(mpTracker);
+
+#if OPEN_LOOP_CLOSURE
+    mpTracker->SetLoopClosing(mpLoopCloser);
     mpLocalMapper->SetLoopCloser(mpLoopCloser);
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+#endif
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
@@ -311,7 +315,9 @@ void System::Reset()
 void System::Shutdown()
 {
     mpLocalMapper->RequestFinish();
+#if OPEN_LOOP_CLOSURE
     mpLoopCloser->RequestFinish();
+#endif
     if(mpViewer)
     {
         mpViewer->RequestFinish();
@@ -320,7 +326,11 @@ void System::Shutdown()
     }
 
     // Wait until all thread have effectively stopped
-    while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
+    while(!mpLocalMapper->isFinished()
+#if OPEN_LOOP_CLOSURE
+        || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA()
+#endif
+        )
     {
         usleep(5000);
     }

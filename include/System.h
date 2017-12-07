@@ -22,6 +22,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#define OPEN_LOOP_CLOSURE 0
+
 #include<string>
 #include<thread>
 #include<opencv2/core/core.hpp>
@@ -144,9 +146,11 @@ private:
     // Local Mapper. It manages the local map and performs local bundle adjustment.
     LocalMapping* mpLocalMapper;
 
+#if OPEN_LOOP_CLOSURE
     // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
     LoopClosing* mpLoopCloser;
+#endif
 
     // The viewer draws the map and the current camera pose. It uses Pangolin.
     Viewer* mpViewer;
@@ -157,7 +161,9 @@ private:
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::thread* mptLocalMapping;
+#if OPEN_LOOP_CLOSURE
     std::thread* mptLoopClosing;
+#endif
     std::thread* mptViewer;
 
     // Reset flag
