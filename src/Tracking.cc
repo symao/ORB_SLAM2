@@ -502,7 +502,6 @@ void Tracking::Track()
         mlFrameTimes.push_back(mlFrameTimes.back());
         mlbLost.push_back(mState==LOST);
     }
-
 }
 
 
@@ -1489,6 +1488,8 @@ bool Tracking::Relocalization()
         }
     }
 
+    for ( auto pSolver : vpPnPsolvers )
+        delete pSolver;
     if(!bMatch)
     {
         return false;
@@ -1519,7 +1520,8 @@ void Tracking::Reset()
 
     // Reset Loop Closing
     cout << "Reseting Loop Closing...";
-    mpLoopClosing->RequestReset();
+    if(mpLoopClosing)
+        mpLoopClosing->RequestReset();
     cout << " done" << endl;
 
     // Clear BoW Database
