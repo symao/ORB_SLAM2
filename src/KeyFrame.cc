@@ -210,6 +210,8 @@ int KeyFrame::GetWeight(KeyFrame *pKF)
 void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
+    if(mvpMapPoints[idx])
+        mvpMapPoints[idx]->EraseObservation(this);
     mvpMapPoints[idx]=pMP;
 }
 
@@ -467,8 +469,12 @@ void KeyFrame::SetBadFlag()
         mit->first->EraseConnection(this);
 
     for(size_t i=0; i<mvpMapPoints.size(); i++)
+    {
         if(mvpMapPoints[i])
+        {
             mvpMapPoints[i]->EraseObservation(this);
+        }
+    }
     {
         unique_lock<mutex> lock(mMutexConnections);
         unique_lock<mutex> lock1(mMutexFeatures);
