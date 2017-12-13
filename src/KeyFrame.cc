@@ -366,7 +366,11 @@ void KeyFrame::UpdateConnections()
         unique_lock<mutex> lockCon(mMutexConnections);
 
         // mspConnectedKeyFrames = spConnectedKeyFrames;
-        mConnectedKeyFrameWeights = KFcounter;
+        // fix, not all keyframes in KF counter has connection to this frame
+        // mConnectedKeyFrameWeights = KFcounter;
+        mConnectedKeyFrameWeights.clear();
+        for(size_t i=0; i<vPairs.size();i++)
+            mConnectedKeyFrameWeights[vPairs[i].second] = vPairs[i].first;
         mvpOrderedConnectedKeyFrames = vector<KeyFrame*>(lKFs.begin(),lKFs.end());
         mvOrderedWeights = vector<int>(lWs.begin(), lWs.end());
 
