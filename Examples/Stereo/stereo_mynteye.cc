@@ -31,7 +31,6 @@
 
 using namespace std;
 
-
 int main(int argc, char **argv)
 {
     std::string strVocFile, strSettingsFile, video_file, video_ts_file;
@@ -72,7 +71,7 @@ int main(int argc, char **argv)
     const int nImages = cap.get(CV_CAP_PROP_FRAME_COUNT);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(strVocFile,strSettingsFile,ORB_SLAM2::System::STEREO,true);
+    ORB_SLAM2::System SLAM(strVocFile,strSettingsFile,ORB_SLAM2::System::STEREO,0);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
@@ -84,52 +83,56 @@ int main(int argc, char **argv)
 
     // Main loop
     cv::Mat imLeft, imRight;
-    for(int ni=0; ni<nImages; ni++)
+    for(int epoch=0; epoch<2; epoch++)
     {
-        cv::Mat img;
-        cap>>img;
-        int rows = img.rows/2;
-        cv::cvtColor(img.rowRange(0,rows),imLeft,cv::COLOR_BGR2GRAY);
-        cv::cvtColor(img.rowRange(rows,rows*2),imRight,cv::COLOR_BGR2GRAY);
-        double tframe;
-        fin_imgts>>tframe;
-
-        if(imLeft.empty())
+        for(int ni=0; ni<nImages; ni++)
         {
-            cerr << endl << "Failed to load image." << endl;
-            return 1;
-        }
+            printf("==============%d\n", ni);
+            cv::Mat img;
+            cap>>img;
+            int rows = img.rows/2;
+            cv::cvtColor(img.rowRange(0,rows),imLeft,cv::COLOR_BGR2GRAY);
+            cv::cvtColor(img.rowRange(rows,rows*2),imRight,cv::COLOR_BGR2GRAY);
+            double tframe;
+            fin_imgts>>tframe;
 
-#ifdef COMPILEDWITHC11
-        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-#else
-        std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
-#endif
+            if(imLeft.empty())
+            {
+                cerr << endl << "Failed to load image." << endl;
+                return 1;
+            }
 
-        // Pass the images to the SLAM system
-        SLAM.TrackStereo(imLeft,imRight,tframe);
-
-#ifdef COMPILEDWITHC11
-        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-#else
-        std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
-#endif
-
-        double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
-
-    #if 0
-        printf("%f\n", ttrack);
-        std::ofstream fout("time.txt", std::ios::app);
-        fout<<ttrack<<std::endl;
-        fout.close();
+    #ifdef COMPILEDWITHC11
+            std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    #else
+            std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
     #endif
-        vTimesTrack[ni]=ttrack;
 
-        usleep(20000);
+            // Pass the images to the SLAM system
+            SLAM.TrackStereo(imLeft,imRight,tframe);
+
+    #ifdef COMPILEDWITHC11
+            std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    #else
+            std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
+    #endif
+
+            double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
+
+        #if 0
+            printf("%f\n", ttrack);
+            std::ofstream fout("time.txt", std::ios::app);
+            fout<<ttrack<<std::endl;
+            fout.close();
+        #endif
+            vTimesTrack[ni]=ttrack;
+            usleep(20000);
+        }
+        printf("Press any key to continue.\n");
+        getchar();
+        cap.open(video_file);
     }
 
-    printf("Press any key to continue.\n");
-    getchar();
     // Stop all threads
     SLAM.Shutdown();
 

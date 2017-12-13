@@ -80,6 +80,25 @@ void MapDrawer::DrawMapPoints()
     glEnd();
 }
 
+void MapDrawer::DrawTrajectory(const std::vector<cv::Mat> &traj_list)
+{
+    for(size_t i=0; i < traj_list.size(); i++)
+    {
+        cv::Mat Twc = traj_list[i].inv().t();
+        glPushMatrix();
+
+        glMultMatrixf(Twc.ptr<GLfloat>(0));
+
+        glLineWidth(mKeyFrameLineWidth);
+        glColor3f(0.2f,0.3f,0.4f);
+        glBegin(GL_POINTS);
+        glVertex3f(0,0,0);
+        glEnd();
+
+        glPopMatrix();
+    }
+}
+
 void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph)
 {
     const float &w = mKeyFrameSize;

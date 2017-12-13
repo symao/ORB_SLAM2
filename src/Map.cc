@@ -130,4 +130,36 @@ void Map::clear()
     mvpKeyFrameOrigins.clear();
 }
 
+void Map::DeleteKeyFrame(KeyFrame* pKF)
+{
+    mspKeyFramesToDelete.push(pKF);
+}
+
+void Map::DeleteOldKeyFrames()
+{
+    const int max_n = 10;
+    int n = 0;
+    while(!mspKeyFramesToDelete.empty())
+    {
+        KeyFrame* p = mspKeyFramesToDelete.front();
+        mspKeyFramesToDelete.pop();
+        delete p;
+        if(n++>max_n)
+            break;
+    }
+}
+
+bool Map::inMap(KeyFrame* pKF)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mspKeyFrames.count(pKF)>0;
+}
+
+bool Map::inMap(MapPoint* pMP)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mspMapPoints.count(pMP)>0;
+}
+
+
 } //namespace ORB_SLAM

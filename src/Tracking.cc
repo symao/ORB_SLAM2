@@ -37,11 +37,16 @@
 
 #include<mutex>
 
-
 using namespace std;
 
 namespace ORB_SLAM2
 {
+
+#if 0
+#define DBG_LINE() do{std::cout<<__func__<<" "<<__LINE__<<std::endl;}while(0)
+#else
+#define DBG_LINE() 
+#endif
 
 Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
     mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
@@ -276,6 +281,7 @@ void Tracking::Track()
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
 
+DBG_LINE();
     if(mState==NOT_INITIALIZED)
     {
         if(mSensor==System::STEREO || mSensor==System::RGBD)
@@ -397,8 +403,10 @@ void Tracking::Track()
         // If we have an initial estimation of the camera pose and matching. Track the local map.
         if(!mbOnlyTracking)
         {
+DBG_LINE();
             if(bOK)
                 bOK = TrackLocalMap();
+DBG_LINE();
         }
         else
         {
@@ -418,6 +426,7 @@ void Tracking::Track()
         mpFrameDrawer->Update(this);
 
         // If tracking were good, check if we insert a keyframe
+DBG_LINE();
         if(bOK)
         {
             // Update motion model
@@ -502,6 +511,7 @@ void Tracking::Track()
         mlFrameTimes.push_back(mlFrameTimes.back());
         mlbLost.push_back(mState==LOST);
     }
+DBG_LINE();
 }
 
 
@@ -930,10 +940,12 @@ bool Tracking::TrackLocalMap()
 {
     // We have an estimation of the camera pose and some map points tracked in the frame.
     // We retrieve the local map and try to find matches to points in the local map.
-
+DBG_LINE();
     UpdateLocalMap();
+DBG_LINE();
 
     SearchLocalPoints();
+DBG_LINE();
 
     // Optimize Pose
     Optimizer::PoseOptimization(&mCurrentFrame);
@@ -961,6 +973,7 @@ bool Tracking::TrackLocalMap()
         }
     }
 
+DBG_LINE();
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
@@ -1195,10 +1208,12 @@ void Tracking::UpdateLocalMap()
 {
     // This is for visualization
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
-
+DBG_LINE();
     // Update
     UpdateLocalKeyFrames();
+DBG_LINE();
     UpdateLocalPoints();
+DBG_LINE();
 }
 
 void Tracking::UpdateLocalPoints()
@@ -1240,7 +1255,9 @@ void Tracking::UpdateLocalKeyFrames()
             {
                 const map<KeyFrame*,size_t> observations = pMP->GetObservations();
                 for(map<KeyFrame*,size_t>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
+                {
                     keyframeCounter[it->first]++;
+                }
             }
             else
             {
@@ -1276,7 +1293,7 @@ void Tracking::UpdateLocalKeyFrames()
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
 
-
+DBG_LINE();
     // Include also some not-already-included keyframes that are neighbors to already-included keyframes
     for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
     {
@@ -1329,7 +1346,6 @@ void Tracking::UpdateLocalKeyFrames()
         }
 
     }
-
     if(pKFmax)
     {
         mpReferenceKF = pKFmax;

@@ -28,6 +28,12 @@
 namespace ORB_SLAM2
 {
 
+#if 0
+#define DBG_LINE() do{std::cout<<__func__<<" "<<__LINE__<<std::endl;}while(0)
+#else
+#define DBG_LINE() 
+#endif
+
 LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
     mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
     mpLoopCloser(nullptr), mpTracker(nullptr),
@@ -58,15 +64,42 @@ void LocalMapping::Run()
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames())
         {
+DBG_LINE();
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
+DBG_LINE();
+            // remove old keyframes
+        #if 1
+            const int max_kf_cnt = 10;
+            auto kfs = mpMap->GetAllKeyFrames();
+            sort(kfs.begin(),kfs.end(),[](KeyFrame* k1,KeyFrame* k2){return k1->mnFrameId<k2->mnFrameId;});
 
+            // for(auto i:kfs){printf("(%d %d) ", i->mnFrameId, i->mnId);}
+            // printf("\n");
+            if(kfs.size()>max_kf_cnt)
+            {
+                int N = kfs.size() - max_kf_cnt;
+                for(int i=0; i<N; i++)
+                {
+                    auto kf = kfs[i];
+                    kf->SetBadFlag();
+                    if(kf->isBad())
+                        delete kf;
+                    else
+                        printf("(%d %d) \n", kf->mnFrameId, kf->mnId);
+                }
+            }
+        #endif
+
+DBG_LINE();
             // Check recent MapPoints
             MapPointCulling();
 
+DBG_LINE();
             // Triangulate new MapPoints
             CreateNewMapPoints();
 
+DBG_LINE();
             if(!CheckNewKeyFrames())
             {
                 // Find more matches in neighbor keyframes and fuse point duplications
@@ -75,15 +108,18 @@ void LocalMapping::Run()
 
             mbAbortBA = false;
 
+DBG_LINE();
             if(!CheckNewKeyFrames() && !stopRequested())
             {
                 // Local BA
                 if(mpMap->KeyFramesInMap()>2)
                     Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
 
+DBG_LINE();
                 // Check redundant local Keyframes
                 KeyFrameCulling();
             }
+DBG_LINE();
             if(mpLoopCloser)
                 mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
         }
@@ -192,11 +228,13 @@ void LocalMapping::MapPointCulling()
         {
             pMP->SetBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
+            // delete pMP;
         }
         else if(((int)nCurrentKFid-(int)pMP->mnFirstKFid)>=2 && pMP->Observations()<=cnThObs)
         {
             pMP->SetBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
+            // delete pMP;
         }
         else if(((int)nCurrentKFid-(int)pMP->mnFirstKFid)>=3)
             lit = mlpRecentAddedMapPoints.erase(lit);
@@ -212,7 +250,6 @@ void LocalMapping::CreateNewMapPoints()
     if(mbMonocular)
         nn=20;
     const vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
-
     ORBmatcher matcher(0.6,false);
 
     cv::Mat Rcw1 = mpCurrentKeyFrame->GetRotation();
@@ -514,7 +551,6 @@ void LocalMapping::SearchInNeighbors()
 
     matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates);
 
-
     // Update points
     vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
     for(size_t i=0, iend=vpMapPointMatches.size(); i<iend; i++)
@@ -692,7 +728,9 @@ void LocalMapping::KeyFrameCulling()
         }  
 
         if(nRedundantObservations>0.9*nMPs)
+        {
             pKF->SetBadFlag();
+        }
     }
 }
 

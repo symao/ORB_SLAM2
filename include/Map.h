@@ -26,7 +26,7 @@
 #include <set>
 
 #include <mutex>
-
+#include <queue>
 
 
 namespace ORB_SLAM2
@@ -59,6 +59,14 @@ public:
 
     void clear();
 
+    void DeleteOldKeyFrames();
+
+    void DeleteKeyFrame(KeyFrame* pKF);
+
+    bool inMap(KeyFrame* pKF);
+
+    bool inMap(MapPoint* pMP);
+
     vector<KeyFrame*> mvpKeyFrameOrigins;
 
     std::mutex mMutexMapUpdate;
@@ -70,7 +78,7 @@ protected:
     std::set<MapPoint*> mspMapPoints;
     std::set<KeyFrame*> mspKeyFrames;
 
-    std::vector<MapPoint*> mvpReferenceMapPoints;
+    std::vector<MapPoint*> mvpReferenceMapPoints;  //map points in local mapping, which is the red points in viewer
 
     long unsigned int mnMaxKFid;
 
@@ -78,6 +86,8 @@ protected:
     int mnBigChangeIdx;
 
     std::mutex mMutexMap;
+
+    std::queue<KeyFrame*> mspKeyFramesToDelete;
 };
 
 } //namespace ORB_SLAM
