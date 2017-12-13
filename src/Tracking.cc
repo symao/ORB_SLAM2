@@ -1342,6 +1342,9 @@ bool Tracking::Relocalization()
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
 
+    if(!mpKeyFrameDB)
+        return false;
+
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
     vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
@@ -1526,7 +1529,8 @@ void Tracking::Reset()
 
     // Clear BoW Database
     cout << "Reseting Database...";
-    mpKeyFrameDB->clear();
+    if(mpKeyFrameDB)
+        mpKeyFrameDB->clear();
     cout << " done" << endl;
 
     // Clear Map (this erase MapPoints and KeyFrames)

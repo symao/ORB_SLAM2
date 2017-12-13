@@ -82,7 +82,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     printf("Vocabulary loaded in %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
     //Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+    mpKeyFrameDatabase = nullptr; //new KeyFrameDatabase(*mpVocabulary);
 
     //Create the Map
     mpMap = new Map();
