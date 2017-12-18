@@ -519,6 +519,7 @@ void Frame::ComputeStereoMatches()
         if(maxU<0)
             continue;
 
+        // for each point in left, find the min dist right point.
         int bestDist = ORBmatcher::TH_HIGH;
         size_t bestIdxR = 0;
 

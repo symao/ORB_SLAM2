@@ -22,6 +22,7 @@
 #include "ORBmatcher.h"
 
 #include<mutex>
+long unsigned int g_cur_exist_mappoints = 0;
 
 namespace ORB_SLAM2
 {
@@ -41,6 +42,7 @@ MapPoint::MapPoint(const cv::Mat &Pos, KeyFrame *pRefKF, Map* pMap):
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
     mnId=nNextId++;
+    g_cur_exist_mappoints++;
 }
 
 MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap, Frame* pFrame, const int &idxF):
@@ -68,6 +70,12 @@ MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap, Frame* pFrame, const int &idxF
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
     mnId=nNextId++;
+    g_cur_exist_mappoints++;
+}
+
+MapPoint::~MapPoint()
+{
+    g_cur_exist_mappoints--;
 }
 
 void MapPoint::SetWorldPos(const cv::Mat &Pos)
@@ -210,7 +218,6 @@ void MapPoint::Replace(MapPoint* pMP)
     pMP->IncreaseFound(nfound);
     pMP->IncreaseVisible(nvisible);
     pMP->ComputeDistinctiveDescriptors();
-
     mpMap->EraseMapPoint(this);
 }
 

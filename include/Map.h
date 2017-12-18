@@ -61,11 +61,13 @@ public:
 
     void DeleteOldKeyFrames();
 
-    void DeleteKeyFrame(KeyFrame* pKF);
+    void DeleteOldMapPoints();
 
     bool inMap(KeyFrame* pKF);
 
     bool inMap(MapPoint* pMP);
+
+    bool inDelete(MapPoint* pMP);
 
     vector<KeyFrame*> mvpKeyFrameOrigins;
 
@@ -88,6 +90,7 @@ protected:
     std::mutex mMutexMap;
 
     std::queue<KeyFrame*> mspKeyFramesToDelete;
+    std::queue<MapPoint*> mspMapPointsToDelete;
 };
 
 } //namespace ORB_SLAM

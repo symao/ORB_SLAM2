@@ -42,7 +42,7 @@ using namespace std;
 namespace ORB_SLAM2
 {
 
-#if 0
+#if 1
 #define DBG_LINE() do{std::cout<<__func__<<" "<<__LINE__<<std::endl;}while(0)
 #else
 #define DBG_LINE() 
@@ -1208,12 +1208,9 @@ void Tracking::UpdateLocalMap()
 {
     // This is for visualization
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
-DBG_LINE();
     // Update
     UpdateLocalKeyFrames();
-DBG_LINE();
     UpdateLocalPoints();
-DBG_LINE();
 }
 
 void Tracking::UpdateLocalPoints()
@@ -1293,7 +1290,6 @@ void Tracking::UpdateLocalKeyFrames()
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
 
-DBG_LINE();
     // Include also some not-already-included keyframes that are neighbors to already-included keyframes
     for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
     {

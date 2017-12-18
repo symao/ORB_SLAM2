@@ -23,6 +23,8 @@
 #include "ORBmatcher.h"
 #include<mutex>
 
+long unsigned int g_cur_exist_keyframes = 0;
+
 namespace ORB_SLAM2
 {
 
@@ -53,7 +55,13 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
             mGrid[i][j] = F.mGrid[i][j];
     }
 
-    SetPose(F.mTcw);    
+    SetPose(F.mTcw);
+    g_cur_exist_keyframes++;
+}
+
+KeyFrame::~KeyFrame()
+{
+    g_cur_exist_keyframes--;
 }
 
 void KeyFrame::ComputeBoW()

@@ -47,18 +47,18 @@ void Map::EraseMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMapPoints.erase(pMP);
-
     // TODO: This only erase the pointer.
     // Delete the MapPoint
+    mspMapPointsToDelete.push(pMP);
 }
 
 void Map::EraseKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspKeyFrames.erase(pKF);
-
     // TODO: This only erase the pointer.
     // Delete the MapPoint
+    mspKeyFramesToDelete.push(pKF);
 }
 
 void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
@@ -130,11 +130,6 @@ void Map::clear()
     mvpKeyFrameOrigins.clear();
 }
 
-void Map::DeleteKeyFrame(KeyFrame* pKF)
-{
-    mspKeyFramesToDelete.push(pKF);
-}
-
 void Map::DeleteOldKeyFrames()
 {
     const int max_n = 10;
@@ -144,6 +139,24 @@ void Map::DeleteOldKeyFrames()
         KeyFrame* p = mspKeyFramesToDelete.front();
         mspKeyFramesToDelete.pop();
         delete p;
+        if(n++>max_n)
+            break;
+    }
+}
+
+void Map::DeleteOldMapPoints()
+{
+    // return;
+    const int max_n = std::min((int)mspMapPointsToDelete.size(), 5000);
+    int n = 0;
+    while(!mspMapPointsToDelete.empty())
+    {
+        MapPoint* p = mspMapPointsToDelete.front();
+        mspMapPointsToDelete.pop();
+        if(p->isBad() && ((int)mnMaxKFid-(int)p->mnFirstKFid)>5)
+            delete p;
+        else
+            mspMapPointsToDelete.push(p);
         if(n++>max_n)
             break;
     }
@@ -161,5 +174,17 @@ bool Map::inMap(MapPoint* pMP)
     return mspMapPoints.count(pMP)>0;
 }
 
+bool Map::inDelete(MapPoint* pMP)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    auto q = mspMapPointsToDelete;
+    while(!q.empty())
+    {
+        if(q.front()==pMP)
+            return true;
+        q.pop();
+    }
+    return false;
+}
 
 } //namespace ORB_SLAM

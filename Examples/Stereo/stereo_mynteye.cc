@@ -87,7 +87,10 @@ int main(int argc, char **argv)
     {
         for(int ni=0; ni<nImages; ni++)
         {
-            printf("==============%d\n", ni);
+            extern long unsigned int g_cur_exist_mappoints;
+            extern long unsigned int g_cur_exist_keyframes;
+            printf("==============%d:  %d %d\n", ni, g_cur_exist_mappoints, g_cur_exist_keyframes);
+
             cv::Mat img;
             cap>>img;
             int rows = img.rows/2;

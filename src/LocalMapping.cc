@@ -28,7 +28,7 @@
 namespace ORB_SLAM2
 {
 
-#if 0
+#if 1
 #define DBG_LINE() do{std::cout<<__func__<<" "<<__LINE__<<std::endl;}while(0)
 #else
 #define DBG_LINE() 
@@ -64,6 +64,8 @@ void LocalMapping::Run()
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames())
         {
+            mpMap->DeleteOldKeyFrames();
+            mpMap->DeleteOldMapPoints();
 DBG_LINE();
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
@@ -83,10 +85,6 @@ DBG_LINE();
                 {
                     auto kf = kfs[i];
                     kf->SetBadFlag();
-                    if(kf->isBad())
-                        delete kf;
-                    else
-                        printf("(%d %d) \n", kf->mnFrameId, kf->mnId);
                 }
             }
         #endif
@@ -94,14 +92,13 @@ DBG_LINE();
 DBG_LINE();
             // Check recent MapPoints
             MapPointCulling();
-
 DBG_LINE();
             // Triangulate new MapPoints
             CreateNewMapPoints();
 
-DBG_LINE();
             if(!CheckNewKeyFrames())
             {
+DBG_LINE();
                 // Find more matches in neighbor keyframes and fuse point duplications
                 SearchInNeighbors();
             }
@@ -141,7 +138,6 @@ DBG_LINE();
 
         if(CheckFinish())
             break;
-
         usleep(3000);
     }
 
@@ -228,13 +224,11 @@ void LocalMapping::MapPointCulling()
         {
             pMP->SetBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
-            // delete pMP;
         }
         else if(((int)nCurrentKFid-(int)pMP->mnFirstKFid)>=2 && pMP->Observations()<=cnThObs)
         {
             pMP->SetBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
-            // delete pMP;
         }
         else if(((int)nCurrentKFid-(int)pMP->mnFirstKFid)>=3)
             lit = mlpRecentAddedMapPoints.erase(lit);
@@ -491,6 +485,7 @@ void LocalMapping::CreateNewMapPoints()
 
 void LocalMapping::SearchInNeighbors()
 {
+DBG_LINE();
     // Retrieve neighbor keyframes
     int nn = 10;
     if(mbMonocular)
@@ -516,7 +511,7 @@ void LocalMapping::SearchInNeighbors()
         }
     }
 
-
+DBG_LINE();
     // Search matches by projection from current KF in target KFs
     ORBmatcher matcher;
     vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
@@ -526,11 +521,10 @@ void LocalMapping::SearchInNeighbors()
 
         matcher.Fuse(pKFi,vpMapPointMatches);
     }
-
     // Search matches by projection from target KFs in current KF
     vector<MapPoint*> vpFuseCandidates;
     vpFuseCandidates.reserve(vpTargetKFs.size()*vpMapPointMatches.size());
-
+DBG_LINE();
     for(vector<KeyFrame*>::iterator vitKF=vpTargetKFs.begin(), vendKF=vpTargetKFs.end(); vitKF!=vendKF; vitKF++)
     {
         KeyFrame* pKFi = *vitKF;
@@ -549,6 +543,7 @@ void LocalMapping::SearchInNeighbors()
         }
     }
 
+DBG_LINE();
     matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates);
 
     // Update points
@@ -566,8 +561,10 @@ void LocalMapping::SearchInNeighbors()
         }
     }
 
+DBG_LINE();
     // Update connections in covisibility graph
     mpCurrentKeyFrame->UpdateConnections();
+DBG_LINE();
 }
 
 cv::Mat LocalMapping::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
